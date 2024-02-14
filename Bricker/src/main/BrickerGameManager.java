@@ -1,20 +1,19 @@
 package main;
 
-import bricker.brick_strategies.BasicCollisionStrategy;
-import bricker.brick_strategies.CollisionStrategy;
+import bricker.brick_strategies.*;
 import danogl.GameManager;
 import danogl.GameObject;
+import danogl.collisions.GameObjectCollection;
 import danogl.collisions.Layer;
 import danogl.components.CoordinateSpace;
 import danogl.gui.*;
+import danogl.gui.rendering.Camera;
 import danogl.gui.rendering.Renderable;
 import danogl.util.Vector2;
-import gameobjects.Ball;
-import gameobjects.Brick;
-import gameobjects.Paddle;
+import gameobjects.*;
+
 import java.util.Random;
 import danogl.util.Counter;
-import gameobjects.LifeBar;
 
 /**
  * The bricker ball game manager.
@@ -41,45 +40,61 @@ public class BrickerGameManager extends GameManager {
     private static final float BALL_SIZE = 50;
     private static final float PADDLE_WIDTH = 200;
     private static final float PADDLE_HEIGHT = 20;
+    private static final int MAX_SUBPADDLE_COLLISIONS = 4;
+    private static final float PUCK_SIZE = BALL_SIZE * 0.75f;
+    private static final String BALL_TAG = "Ball";
+    private static final String MAIN_PADDLE_TAG = "Main_paddle";
+
+    private static final String SUB_PADDLE_TAG = "Sub_paddle";
+
+    private static final String PUCK_TAG = "PuckBall";
 
     // UI constants.
     private static final int HEART_SIZE = 20;
     private static final int GAME_LIVES = 3;
-    private static final int MAX_GAME_LIVES = 10;
+    private static final int MAX_GAME_LIVES = 4;
+
     private static final String PLAY_AGAIN_PROMPT = " Play again?";
     private static final String LOSING_PROMPT = "you lose!" + PLAY_AGAIN_PROMPT;
     private static final String WINNING_PROMPT = "you win!" + PLAY_AGAIN_PROMPT;
 
     // Assets
-    private static final String ASSETS_FOLDER = "assets";
+    private static final String ASSETS_FOLDER = "Bricker/assets";
     private static final String BALL_IMAGE_PATH = ASSETS_FOLDER + "/ball.png";
+
     private static final String BRICK_IMAGE_PATH = ASSETS_FOLDER + "/brick.png";
     private static final String PADDLE_IMAGE_PATH = ASSETS_FOLDER + "/paddle.png";
     private static final String BACKGROUND_IMAGE_PATH = ASSETS_FOLDER + "/DARK_BG2_small.jpeg";
     private static final String HEART_IMAGE_PATH = ASSETS_FOLDER + "/heart.png";
     private static final String BLOP_SILENCED = ASSETS_FOLDER + "/blop_cut_silenced.wav";
+    private static final String PUCK_IMAGE_PATH = ASSETS_FOLDER + "/mockBall.png";
 
     // User input
     public static final int BRICK_ROWS_LOCATION = 0;
     public static final int BRICKS_PER_ROW_LOCATION = 1;
     public static final int NUM_OF_USER_INPUTS = 2;
+    private static final float HEART_VELOCITY = 100f;
+    private static final String HEART_TAG = "Heart";
 
     //////////////////////////////////////////
     // Game Privates /////////////////////////
     //////////////////////////////////////////
 
     // Game state.
-    private Counter livesCounter;
+    private LifeCounter livesCounter;
     private Counter brickCounter;
     private int numOfBrickRows = DEFAULT_BRICK_ROWS;
     private int bricksPerRow = DEFAULT_BRICKS_PER_ROW;
+    private StrategyFactory strategyFactory;
 
     // The objects.
-    private Ball ball;
-    private WindowController windowController;
+    public Ball ball;
+    public WindowController windowController;
     private ImageReader imageReader;
     private SoundReader soundReader;
     private UserInputListener inputListener;
+
+    private boolean subPaddleUsed;
 
     // Add wall
     private void addWall(Vector2 topLeftCorner, Vector2 dimensions) {
@@ -87,13 +102,13 @@ public class BrickerGameManager extends GameManager {
         this.gameObjects().addGameObject(wall, Layer.STATIC_OBJECTS);
     }
 
-    // Set the ball starting point and velocity.
-    private void set_ball_starting_movement() {
-        ball.setCenter(windowController.getWindowDimensions().mult(0.5f));
+    // Set a puck's starting point and velocity.
+    private void setBallStartingMovement(Vector2 center, Ball ball) {
+        ball.setCenter(center);
         Random rand = new Random();
-        double angle = rand.nextDouble() * 2 * Math.PI;
-        float ballVelX = (float) (BALL_VELOCITY * Math.cos(angle));
-        float ballVelY = (float) (BALL_VELOCITY * Math.sin(angle));
+        double angle = rand.nextDouble() * Math.PI;
+        float ballVelX = (float) Math.cos(angle) * BALL_VELOCITY;
+        float ballVelY = (float) Math.sin(angle) * BALL_VELOCITY;
         ball.setVelocity(new Vector2(ballVelX, ballVelY));
     }
 
@@ -109,11 +124,16 @@ public class BrickerGameManager extends GameManager {
 
     // Add Bricks
     private void addBricks() {
+
+        int rand = 0;
         Renderable brickRenderer = imageReader.readImage(BRICK_IMAGE_PATH, false);
+
         int brickWidth = (int) (windowController.getWindowDimensions().x() - WALL_WIDTH) / this.bricksPerRow;
         for (int col = 0; col < this.bricksPerRow; col++) {
             for (int row = 0; row < this.numOfBrickRows; row++) {
-                CollisionStrategy collisionStrategy = new BasicCollisionStrategy(gameObjects(), brickCounter);
+                this.strategyFactory = new StrategyFactory(this, brickCounter);
+                CollisionStrategy collisionStrategy = this.strategyFactory.chooseStrategy();
+
                 Brick brick = new Brick(
                         new Vector2(WALL_WIDTH + col * (brickWidth + SPACER),
                                 WALL_WIDTH + row * (SPACER + BRICK_HEIGHT)),
@@ -129,55 +149,147 @@ public class BrickerGameManager extends GameManager {
     private void addBall() {
         Renderable ballImage = imageReader.readImage(BALL_IMAGE_PATH, true);
         Sound collisionSound = soundReader.readSound(BLOP_SILENCED);
-        this.ball = new Ball(Vector2.ZERO, new Vector2(BALL_SIZE, BALL_SIZE), ballImage, collisionSound);
-        set_ball_starting_movement();
+        this.ball = new Ball(Vector2.ZERO, new Vector2(BALL_SIZE, BALL_SIZE), ballImage, collisionSound, this);
+        setBallStartingMovement(windowController.getWindowDimensions().mult(0.5f), this.ball);
+        ball.setTag(BALL_TAG);
         this.gameObjects().addGameObject(ball, Layer.DEFAULT);
     }
 
+    public void addPuck(Vector2 center) {
+        Renderable ballImage = imageReader.readImage(PUCK_IMAGE_PATH, true);
+        Sound collisionSound = soundReader.readSound(BLOP_SILENCED);
+        Ball puck = new Ball(Vector2.ZERO, new Vector2(PUCK_SIZE, PUCK_SIZE), ballImage,
+                collisionSound, this);
+        setBallStartingMovement(center, puck);
+        puck.setTag(PUCK_TAG);
+        this.gameObjects().addGameObject(puck, Layer.DEFAULT);
+
+    }
+
     // Add Paddle
-    private void addPaddle() {
+    private void addPaddle(Vector2 center, String tag) {
         Renderable paddleImage = imageReader.readImage(PADDLE_IMAGE_PATH, false);
-        GameObject Paddle = new Paddle(Vector2.ZERO, new Vector2(PADDLE_WIDTH, PADDLE_HEIGHT), paddleImage,
-                inputListener);
-        Paddle.setCenter(new Vector2(windowController.getWindowDimensions().x() / 2,
-                (int) windowController.getWindowDimensions().y() - 30));
-        this.gameObjects().addGameObject(Paddle, Layer.DEFAULT);
+        Paddle paddle = new Paddle(Vector2.ZERO, new Vector2(PADDLE_WIDTH, PADDLE_HEIGHT), paddleImage,
+                this.inputListener);
+        paddle.setCenter(center);
+        paddle.setTag(tag);
+        this.gameObjects().addGameObject(paddle, Layer.DEFAULT);
+    }
+
+    public void addCameraHandler() {
+        // TODO: check if need to delete it from gameObjects list
+        if (this.camera() != null) {
+            addObj(new CameraHandler(Vector2.ZERO, Vector2.ZERO, null, ball, this),
+                    Layer.DEFAULT);
+        }
     }
 
     // Add Life Counter
     private void addLifeCounter() {
         Renderable heartImage = imageReader.readImage(HEART_IMAGE_PATH, false);
+        GameObjectCollection gameObject = gameObjects();
         LifeBar lifeCounter = new LifeBar(new Vector2(0, windowController.getWindowDimensions().y() - HEART_SIZE),
                 new Vector2(HEART_SIZE, HEART_SIZE),
                 heartImage,
-                gameObjects(), this.livesCounter, SPACER, MAX_GAME_LIVES);
+                this, this.livesCounter, SPACER, MAX_GAME_LIVES);
         gameObjects().addGameObject(lifeCounter, Layer.UI);
     }
 
     /**
+     * Add an object from gameObjects list
+     *
+     * @param gameObject the object to add.
+     * @param layer      the layer to add to.
+     */
+    public void addObj(GameObject gameObject, int layer) {
+        this.gameObjects().addGameObject(gameObject, layer);
+    }
+
+    /**
+     * Remove an object from gameObjects list
+     *
+     * @param gameObject the object to remove.
+     * @param layer      the layer to remove from.
+     */
+    public boolean removeObj(GameObject gameObject, int layer) {
+        return this.gameObjects().removeGameObject(gameObject, layer);
+    }
+
+    /**
+     * Getter for the image reader.
+     *
+     * @return The image reader.
+     */
+    public ImageReader getImageReader() {
+        return imageReader;
+    }
+
+    /**
+     * Getter for the input reader.
+     *
+     * @return The input reader.
+     */
+    public UserInputListener getInputListener() {
+        return inputListener;
+    }
+
+    public WindowController getWindowController(){
+        return windowController;
+    }
+
+    /**
+     * Getter for isSubPaddleUsed.
+     *
+     * @return isSubPaddleUsed.
+     */
+    public boolean isSubPaddleUsed() {
+        return subPaddleUsed;
+    }
+
+    /**
+     * Setter for subPaddleUsed.
+     *
+     * @param subPaddleUsed
+     */
+    public void setSubPaddleUsed(boolean subPaddleUsed) {
+        this.subPaddleUsed = subPaddleUsed;
+    }
+
+    public LifeCounter getLifeCounter(){
+        return livesCounter;
+    }
+    /**
+     * checks if an object is on the screen or fell down from the floor.
+     *
+     * @param object The game object we want to check it's bounds.
+     */
+    public boolean outOfBound(GameObject object) {
+        double objHeight = object.getCenter().y();
+        float gameBottom = windowController.getWindowDimensions().y();
+        if (objHeight > gameBottom) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Update the game state, and check for game end.
-     * 
+     *
      * @param deltaTime The time passed since the last update.
      */
     @Override
     public void update(float deltaTime) {
         super.update(deltaTime);
-
-        // Check if the ball is out of the game. if so, decrease the lives counter.
-        // And bring the ball back to the game.
-        double ballHeight = ball.getCenter().y();
-        float gameBottom = windowController.getWindowDimensions().y();
-        if (ballHeight > gameBottom) {
+        if (outOfBound(ball)) {
             this.livesCounter.decrement();
-            set_ball_starting_movement();
-
+            setBallStartingMovement(windowController.getWindowDimensions().mult(0.5f), this.ball);
         }
         checkForGameEnd();
     }
 
     /**
      * Construct a new BrickerGameManager instance.
-     * 
+     *
      * @param windowTitle      The title of the window.
      * @param windowDimensions The dimensions of the window.
      */
@@ -187,7 +299,7 @@ public class BrickerGameManager extends GameManager {
 
     /**
      * change brick constants.
-     * 
+     *
      * @param numOfBrickRows The number of brick rows.
      * @param bricksPerRow   The number of bricks per row.
      */
@@ -218,7 +330,7 @@ public class BrickerGameManager extends GameManager {
     /**
      * Initialize the game.
      * Builds the game's objects and sets the game's window.
-     * 
+     *
      * @param imageReader      The image reader to read the game's images.
      * @param soundReader      The sound reader to read the game's sounds.
      * @param inputListener    The input listener to listen to the user's input.
@@ -247,10 +359,12 @@ public class BrickerGameManager extends GameManager {
         brickCounter = new Counter();
         addBricks();
         addBall();
-        addPaddle();
+        addPaddle(new Vector2(windowController.getWindowDimensions().x() / 2,
+                (int) windowController.getWindowDimensions().y() - 30), MAIN_PADDLE_TAG);
 
-        this.livesCounter = new Counter(GAME_LIVES);
+        this.livesCounter = new LifeCounter(MAX_GAME_LIVES,GAME_LIVES);
         addLifeCounter();
+        this.subPaddleUsed = false;
     }
 
     /**

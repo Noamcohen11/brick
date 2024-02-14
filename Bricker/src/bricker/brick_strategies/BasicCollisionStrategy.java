@@ -1,9 +1,11 @@
 package bricker.brick_strategies;
 
+import danogl.GameManager;
 import danogl.GameObject;
 import danogl.collisions.GameObjectCollection;
 import danogl.collisions.Layer;
 import danogl.util.Counter;
+import main.BrickerGameManager;
 
 /**
  * Basic collision strategy - removes the object from the game.
@@ -11,7 +13,8 @@ import danogl.util.Counter;
  */
 public class BasicCollisionStrategy implements CollisionStrategy {
 
-    private GameObjectCollection gameObjects;
+    // private GameObjectCollection gameObjects;
+    private BrickerGameManager brickerGameManager;
     private Counter brickCounter;
     // The layer of the game object - as defined in the forum post.
     private static final int layer = Layer.STATIC_OBJECTS;
@@ -19,10 +22,11 @@ public class BasicCollisionStrategy implements CollisionStrategy {
     /**
      * Construct a new BasicCollisionStrategy instance.
      *
-     * @param gameObjects The game objects collection to remove the object from.
+     * // * @param gameObjects The game objects collection to remove the object
+     * from.
      */
-    public BasicCollisionStrategy(GameObjectCollection gameObjects, Counter brickCounter) {
-        this.gameObjects = gameObjects;
+    public BasicCollisionStrategy(BrickerGameManager gameManager, Counter brickCounter) {
+        this.brickerGameManager = gameManager;
         this.brickCounter = brickCounter;
     }
 
@@ -34,7 +38,8 @@ public class BasicCollisionStrategy implements CollisionStrategy {
      */
     @Override
     public void onCollision(GameObject fObj, GameObject sObj) {
-        this.gameObjects.removeGameObject(fObj, layer);
-        this.brickCounter.decrement();
+        if (brickerGameManager.removeObj(fObj, layer)) {
+            this.brickCounter.decrement();
+        }
     }
 }

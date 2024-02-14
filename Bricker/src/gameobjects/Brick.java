@@ -10,6 +10,9 @@ import danogl.util.Vector2;
  * Class represting a gameobject - the brick.
  */
 public class Brick extends GameObject {
+
+    private CollisionStrategy collisionStrategy;
+    private boolean oneCollisionOnly;
     /**
      * Construct a new GameObject instance
      *
@@ -20,12 +23,11 @@ public class Brick extends GameObject {
      *                      which case
      *                      the GameObject will not be rendered.
      */
-    private CollisionStrategy collisionStrategy;
-
     public Brick(Vector2 topLeftCorner, Vector2 dimensions, Renderable renderable,
             CollisionStrategy collisionStrategy) {
         super(topLeftCorner, dimensions, renderable);
         this.collisionStrategy = collisionStrategy;
+        this.oneCollisionOnly= true;
     }
 
     /**
@@ -39,6 +41,9 @@ public class Brick extends GameObject {
     @Override
     public void onCollisionEnter(GameObject other, Collision collision) {
         super.onCollisionEnter(other, collision);
-        collisionStrategy.onCollision(this, other);
+        if(oneCollisionOnly){
+            collisionStrategy.onCollision(this, other);
+            oneCollisionOnly = false;
+        }
     }
 }

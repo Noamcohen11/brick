@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Bricker/Bricker.iml" filepath="$PROJECT_DIR$/Bricker/Bricker.iml" />
+      <module fileurl="file://$PROJECT_DIR$/DanoGameLab/DanoGameLab.iml" filepath="$PROJECT_DIR$/DanoGameLab/DanoGameLab.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ex2.iml" filepath="$PROJECT_DIR$/.idea/ex2.iml" />
+    </modules>
+  </component>
+</project>

@@ -2,17 +2,26 @@ package gameobjects;
 
 import danogl.GameObject;
 import danogl.collisions.Collision;
+import danogl.collisions.Layer;
 import danogl.gui.Sound;
 import danogl.gui.rendering.Renderable;
+import danogl.util.Counter;
 import danogl.util.Vector2;
+import main.BrickerGameManager;
 
 /**
  * Class represting a gameobject - the ball.
  */
 public class Ball extends GameObject {
-
     private final Sound collisionSound;
+    private final BrickerGameManager gameManager;
     private int collisionCounter;
+    private static final String PUCK_TAG = "PuckBall";
+    private static final String BALL_TAG = "Ball";
+    private static final int MAX_BALL_COLLISIONS = 4;
+
+
+
 
     /**
      * Construct a new GameObject instance of the ball.
@@ -24,10 +33,12 @@ public class Ball extends GameObject {
      *                      which case
      *                      the GameObject will not be rendered.
      */
-    public Ball(Vector2 topLeftCorner, Vector2 dimensions, Renderable renderable, Sound collisionSound) {
+    public Ball(Vector2 topLeftCorner, Vector2 dimensions, Renderable renderable,
+                Sound collisionSound,  BrickerGameManager gameManager) {
         super(topLeftCorner, dimensions, renderable);
         this.collisionSound = collisionSound;
         collisionCounter = 0;
+        this.gameManager = gameManager;
     }
 
     /**
@@ -45,15 +56,21 @@ public class Ball extends GameObject {
         setVelocity(newVel);
         collisionSound.play();
         collisionCounter++;
+
     }
 
-    /**
-     * brief Get the number of collisions the ball has had.
-     * 
-     * @return Int - The number of collisions the ball has had.
-     */
-    public int getCollisionCounter() {
-        return collisionCounter;
+    @Override
+    public void update(float deltaTime) {
+        super.update(deltaTime);
+        if (this.getTag().equals((PUCK_TAG)) && gameManager.outOfBound(this)) {
+            gameManager.removeObj(this,Layer.DEFAULT);
+
+        }
+
+    }
+
+    public int getBallCollisionCounter(){
+        return this.collisionCounter;
     }
 
 }
