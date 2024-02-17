@@ -8,18 +8,20 @@ import danogl.gui.rendering.Renderable;
 import danogl.util.Vector2;
 import danogl.util.Counter;
 import main.BrickerGameManager;
+import main.Constants;
 
 import java.awt.event.KeyEvent;
+import java.lang.constant.Constable;
 
 /**
  * Class represting a gameobject - the paddle.
  */
+
+
 public class SubPaddle extends Paddle {
 
     private final Counter collisionCount;
     private final BrickerGameManager gameManager;
-    private static final int MAX_HITS = 4;
-    private static final String BALL_TAG = "Ball";
 
     /**
      * Construct a new GameObject instance of the paddle.
@@ -41,18 +43,19 @@ public class SubPaddle extends Paddle {
     }
 
     /**
-     * When a collusion is detected this function will be called.
-     *
-     * @param fObj The first object that the GameObject collided with.
-     * @param sObj The second object that the GameObject collided with.
+     * Called on the first frame of a collision.
+     * @param other The GameObject with which a collision occurred.
+     * @param collision Information regarding this collision.
+     *                  A reasonable elastic behavior can be achieved with:
+     *                  setVelocity(getVelocity().flipped(collision.getNormal()));
      */
     @Override
     public void onCollisionEnter(GameObject other, Collision collision) {
         super.onCollisionEnter(other, collision);
-        if (other.getTag().equals(BALL_TAG)) {
+        if (other.getTag().equals(Constants.BALL_TAG)||other.getTag().equals(Constants.PUCK_TAG)) {
             collisionCount.increment();
         }
-        if (collisionCount.value() >= MAX_HITS) {
+        if (collisionCount.value() >= Constants.SUBPADDLE_MAX_HITS) {
             this.gameManager.removeObj(this, Layer.DEFAULT);
             gameManager.setSubPaddleUsed(false);
         }

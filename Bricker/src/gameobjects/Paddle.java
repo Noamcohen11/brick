@@ -4,6 +4,7 @@ import danogl.GameObject;
 import danogl.gui.UserInputListener;
 import danogl.gui.rendering.Renderable;
 import danogl.util.Vector2;
+import main.Constants;
 
 import java.awt.event.KeyEvent;
 
@@ -12,7 +13,7 @@ import java.awt.event.KeyEvent;
  */
 public class Paddle extends GameObject {
 
-    private static final float MOVEMENT_SPEED = 300;
+
     private final UserInputListener inputListener;
 
     /**
@@ -52,7 +53,7 @@ public class Paddle extends GameObject {
         if (this.getTopLeftCorner().x() + 200 > 700) {
             this.setTopLeftCorner(new Vector2(500, getTopLeftCorner().y()));
         }
-        setVelocity(movementDir.mult(MOVEMENT_SPEED));
+        setVelocity(movementDir.mult(Constants.PADDLE_MOVEMENT_SPEED));
 
     }
 }

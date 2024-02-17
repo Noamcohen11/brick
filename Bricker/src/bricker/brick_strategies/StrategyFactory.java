@@ -2,6 +2,7 @@ package bricker.brick_strategies;
 
 import danogl.util.Counter;
 import main.BrickerGameManager;
+import main.Constants;
 
 import java.util.Random;
 
@@ -13,15 +14,7 @@ import java.util.Random;
  *
  */
 public class StrategyFactory {
-    private static final int BASIC_STRATEGY = 0;
-    private static final int STRATEGY_TYPE_NUM = 2;
-    private static final int MAX_STRATEGY_COUNT = 3;
-    private static final int EXTRA_BALL = 0;
-    private static final int EXTRA_PADDLE = 1;
-    private static final int CHANGE_CAMERA = 2;
-    private static final int EXTRA_LIFE = 3;
-    private static final int DOUBLE_STRATEGY = 4;
-    private static final int SPECIEL_STRATEGY_TYPE_NUM = 5;
+
 
     private final Random random = new Random();
     private final BrickerGameManager gameManager;
@@ -52,30 +45,39 @@ public class StrategyFactory {
         return chooseStrategyHelper(strategyCount, basicCollisionStrategy);
     }
 
+    // a method to choose which strategy to put for a brick according to some conditions
     private CollisionStrategy chooseStrategyHelper(Counter strategyCount, CollisionStrategy wrapped) {
 
         strategyCount.increment();
-        int rand = random.nextInt(STRATEGY_TYPE_NUM);
-        if (rand == BASIC_STRATEGY) {
+        int rand = random.nextInt(Constants.STRATEGY_TYPE_NUM);
+        if (rand == Constants.BASIC_STRATEGY) {
+            System.out.println("BASIC_STRATEGY");
             return new BasicCollisionStrategy(gameManager, brickCounter);
         }
-        rand = random.nextInt(SPECIEL_STRATEGY_TYPE_NUM);
-        if (rand == EXTRA_BALL) {
+        rand = random.nextInt(Constants.SPECIEL_STRATEGY_TYPE_NUM);
+        if (rand == Constants.EXTRA_BALL) {
+            System.out.println("EXTRA_BALL");
             return new BallsStrategyDecorator(gameManager, brickCounter, wrapped);
         }
-        else if (rand == EXTRA_PADDLE) {
+        else if (rand == Constants.EXTRA_PADDLE) {
+            System.out.println("EXTRA_PADDLE");
             return new PaddleStrategyDecorator(gameManager, brickCounter, wrapped);
         }
-        else if (rand == CHANGE_CAMERA) {
+        else if (rand == Constants.CHANGE_CAMERA) {
+            System.out.println("CHANGE_CAMERA");
             return new CameraStrategyDecorator(gameManager, brickCounter, wrapped);
         }
-        else if (rand == EXTRA_LIFE) {
+        else if (rand == Constants.EXTRA_LIFE) {
+            System.out.println("EXTRA_LIFE");
             return new LifeStrategyDecorator(gameManager, brickCounter, wrapped);
         }
-        else if (strategyCount.value() < MAX_STRATEGY_COUNT){
+        else if (strategyCount.value() < Constants.MAX_STRATEGY_COUNT){
+            System.out.println("extra");
             CollisionStrategy innerStrategy = chooseStrategyHelper(strategyCount, wrapped);
             return chooseStrategyHelper(strategyCount, innerStrategy);
         }
+        System.out.println("none");
         return new BasicCollisionStrategy(gameManager, brickCounter);
+
     }
 }

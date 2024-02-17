@@ -14,14 +14,13 @@ import main.BrickerGameManager;
 public class BasicCollisionStrategy implements CollisionStrategy {
 
     // private GameObjectCollection gameObjects;
-    private BrickerGameManager brickerGameManager;
+    private final BrickerGameManager brickerGameManager;
     private Counter brickCounter;
     // The layer of the game object - as defined in the forum post.
     private static final int layer = Layer.STATIC_OBJECTS;
 
     /**
      * Construct a new BasicCollisionStrategy instance.
-     *
      * // * @param gameObjects The game objects collection to remove the object
      * from.
      */

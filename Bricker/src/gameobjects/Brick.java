@@ -11,7 +11,7 @@ import danogl.util.Vector2;
  */
 public class Brick extends GameObject {
 
-    private CollisionStrategy collisionStrategy;
+    private final CollisionStrategy collisionStrategy;
     private boolean oneCollisionOnly;
     /**
      * Construct a new GameObject instance

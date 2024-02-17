@@ -9,19 +9,19 @@ import danogl.util.Counter;
 import danogl.collisions.GameObjectCollection;
 import danogl.collisions.Layer;
 import main.BrickerGameManager;
+import main.Constants;
 
 /**
- * Class represting a gameobject - the heart life counter.
+ * Class representing a gameobject - the heart life counter.
  */
 public class LifeBar extends GameObject {
     private Heart[] hearts;
     private Counter counter;
     private int heartsPlaces;
 //    private GameObjectCollection gameObjects;
-    private BrickerGameManager gameManager;
-    private TextRenderable textRenderable;
-    private static final int YELLOW_COUNTER = 2;
-    private static final int RED_COUNTER = 1;
+    private final BrickerGameManager gameManager;
+    private final TextRenderable textRenderable;
+
 
     /**
      * Construct a new GameObject instance of the life counter.
@@ -68,7 +68,7 @@ public class LifeBar extends GameObject {
     @Override
     public void update(float deltaTime) {
         super.update(deltaTime);
-        if (counter.value() < hearts.length && heartsPlaces < counter.value()) {
+        if (counter.value() < hearts.length+1 && heartsPlaces < counter.value()) {
             for (int i = heartsPlaces; i < counter.value(); i++) {
                 this.gameManager.addObj(hearts[i], Layer.UI);
             }
@@ -82,9 +82,9 @@ public class LifeBar extends GameObject {
         if (counter.value() >= 0) {
             textRenderable.setString(Integer.toString(counter.value()));
         }
-        if (counter.value() == RED_COUNTER) {
+        if (counter.value() == Constants.RED_COUNTER) {
             textRenderable.setColor(Color.red);
-        } else if (counter.value() == YELLOW_COUNTER) {
+        } else if (counter.value() == Constants.YELLOW_COUNTER) {
             textRenderable.setColor(Color.yellow);
 
         } else {

@@ -7,25 +7,24 @@ import danogl.util.Counter;
 import danogl.util.Vector2;
 import gameobjects.Heart;
 import main.BrickerGameManager;
+import main.Constants;
 
 /**
  * PickLifeStrategy - removes the object from the game and adds a falling heart.
  * 
  */
 public class LifeStrategyDecorator extends BaseStrategyDecorator implements CollisionStrategy {
-    private BrickerGameManager gameManager;
-    private static final float HEART_VELOCITY = 100f;
-    private static final String HEART_TAG = "Heart";
-    private static final String ASSETS_FOLDER = "Bricker/assets";
-    private static final String HEART_IMAGE_PATH = ASSETS_FOLDER + "/heart.png";
-    private static final int HEART_SIZE = 20;
+    private final BrickerGameManager gameManager;
 
+    // adds a falling heart to the game
     private void addFallingHeart(Vector2 center) {
-        Renderable heartImage = this.gameManager.getImageReader().readImage(HEART_IMAGE_PATH, false);
-        Heart heart = new Heart(Vector2.ZERO, new Vector2(HEART_SIZE, HEART_SIZE), heartImage, this.gameManager);
+        Renderable heartImage = this.gameManager.getImageReader().readImage(Constants.HEART_IMAGE_PATH,
+                false);
+        Heart heart = new Heart(Vector2.ZERO, new Vector2(Constants.HEART_SIZE, Constants.HEART_SIZE),
+                heartImage, this.gameManager);
         heart.setCenter(center);
-        heart.setVelocity(Vector2.DOWN.mult(HEART_VELOCITY));
-        heart.setTag(HEART_TAG);
+        heart.setVelocity(Vector2.DOWN.mult(Constants.HEART_VELOCITY));
+        heart.setTag(Constants.HEART_TAG);
         this.gameManager.addObj(heart, Layer.DEFAULT);
     }
     /**

@@ -3,9 +3,14 @@ package bricker.brick_strategies;
 import danogl.GameObject;
 import danogl.util.Counter;
 import main.BrickerGameManager;
+/**
+ * extra ball strategy - adds two puck balls to the game when a brick disappears.
+ *
+ */
 
 public abstract class BaseStrategyDecorator implements CollisionStrategy{
     private final CollisionStrategy wrapped;
+
 
     public BaseStrategyDecorator(BrickerGameManager gameManager, Counter brickCounter,CollisionStrategy wrapped) {
         this.wrapped = wrapped;
